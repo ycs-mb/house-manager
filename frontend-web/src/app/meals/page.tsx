@@ -40,6 +40,7 @@ export default function MealsPage() {
   const [shoppingList, setShoppingList] = useState<ShoppingListItem[]>([]);
   const [showRecipeForm, setShowRecipeForm] = useState(false);
   const [editingPlan, setEditingPlan] = useState<string | null>(null);
+  const [addingMeal, setAddingMeal] = useState<{ date: string; mealType: string } | null>(null);
   const [newRecipe, setNewRecipe] = useState({
     name: '',
     description: '',
@@ -123,8 +124,10 @@ export default function MealsPage() {
 
     try {
       const recipeIds = recipes.map(r => r.id);
-      // Start from December 27, 2025
-      const startDate = new Date('2025-12-27T00:00:00');
+      // Start from next day (tomorrow)
+      const startDate = new Date();
+      startDate.setDate(startDate.getDate() + 1);
+      startDate.setHours(0, 0, 0, 0);
 
       const response = await fetch('http://localhost:8000/api/v1/meals/meal-plans/generate-weekly', {
         method: 'POST',
@@ -192,6 +195,31 @@ export default function MealsPage() {
       }
     } catch (error) {
       console.error('Error deleting meal plan:', error);
+    }
+  };
+
+  const createMealPlan = async (date: string, mealType: string, recipeId: string) => {
+    try {
+      // Create planned_date with appropriate hour based on meal type
+      const dateObj = new Date(date);
+      const hour = mealType === 'breakfast' ? 8 : mealType === 'lunch' ? 12 : 18;
+      dateObj.setHours(hour, 0, 0, 0);
+
+      const response = await fetch('http://localhost:8000/api/v1/meals/meal-plans', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          recipe_id: recipeId,
+          meal_type: mealType,
+          planned_date: dateObj.toISOString()
+        })
+      });
+      if (response.ok) {
+        await loadMealPlans();
+        setAddingMeal(null);
+      }
+    } catch (error) {
+      console.error('Error creating meal plan:', error);
     }
   };
 
@@ -402,7 +430,7 @@ export default function MealsPage() {
         {activeTab === 'planner' && (
           <div>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2rem' }}>
-              <h2 style={{ fontSize: '1.5rem' }}>Weekly Meal Plan (Dec 27 - Jan 2, 2026)</h2>
+              <h2 style={{ fontSize: '1.5rem' }}>Weekly Meal Plan</h2>
               <button
                 onClick={generateWeeklyPlan}
                 style={{
@@ -484,7 +512,41 @@ export default function MealsPage() {
                                   )}
                                 </div>
                               ) : (
-                                <div style={{ flex: 1, color: '#666', fontStyle: 'italic' }}>No meal planned</div>
+                                <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                                  {addingMeal?.date === date && addingMeal?.mealType === mealType ? (
+                                    <>
+                                      <select
+                                        onChange={(e) => {
+                                          if (e.target.value) {
+                                            createMealPlan(date, mealType, e.target.value);
+                                          }
+                                        }}
+                                        style={{ flex: 1, padding: '0.75rem', backgroundColor: '#2a2a3a', border: '1px solid #6366f1', borderRadius: '8px', color: 'white' }}
+                                      >
+                                        <option value="">Select a recipe...</option>
+                                        {recipes.map(recipe => (
+                                          <option key={recipe.id} value={recipe.id}>{recipe.name}</option>
+                                        ))}
+                                      </select>
+                                      <button
+                                        onClick={() => setAddingMeal(null)}
+                                        style={{ padding: '0.5rem 1rem', backgroundColor: '#444', border: 'none', borderRadius: '6px', color: 'white', cursor: 'pointer', fontSize: '0.875rem' }}
+                                      >
+                                        Cancel
+                                      </button>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <div style={{ flex: 1, color: '#666', fontStyle: 'italic' }}>No meal planned</div>
+                                      <button
+                                        onClick={() => setAddingMeal({ date, mealType })}
+                                        style={{ padding: '0.5rem 1rem', backgroundColor: '#6366f1', border: 'none', borderRadius: '6px', color: 'white', cursor: 'pointer', fontSize: '0.875rem' }}
+                                      >
+                                        Add Meal
+                                      </button>
+                                    </>
+                                  )}
+                                </div>
                               )}
                             </div>
                           );
