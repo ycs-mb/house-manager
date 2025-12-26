@@ -4,18 +4,9 @@ import os
 
 # Define the LLM based on user configuration (Gemini on Vertex AI preferred)
 def get_llm():
-    if settings.GOOGLE_CLOUD_PROJECT:
-        # Use Vertex AI Gemini
-        return LLM(
-            model=f"vertex_ai/{settings.GEMINI_MODEL}",
-            project=settings.GOOGLE_CLOUD_PROJECT,
-            location=settings.GOOGLE_CLOUD_REGION
-        )
-    if settings.OPENAI_API_KEY and settings.OPENAI_API_KEY != "your_openai_key":
-        return LLM(model="gpt-4", api_key=settings.OPENAI_API_KEY)
-    
-    # Fallback for local demo
-    return LLM(model="gpt-3.5-turbo", base_url="http://localhost:1234/v1", api_key="dummy")
+    # Return None to use CrewAI's default LLM configuration
+    # Users can configure their own LLM by setting environment variables
+    return None
 
 class FinanceAgent(Agent):
     def __init__(self):
