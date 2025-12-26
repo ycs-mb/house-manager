@@ -121,6 +121,10 @@ def get_meal_plans(
     # Load recipes for each meal plan
     result = []
     for meal_plan in meal_plans:
+        # Skip meal plans with null recipe_id
+        if not meal_plan.recipe_id:
+            continue
+
         recipe = db.query(models.Recipe).filter(
             models.Recipe.id == meal_plan.recipe_id
         ).first()
