@@ -1,0 +1,60 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #6366f1;
+  --color-accent: #f5c2e7;
+  --color-foreground: rgb(255, 255, 255);
+  --color-background-start: rgb(10, 10, 15);
+  --color-background-end: rgb(0, 0, 0);
+  --color-card: #181825;
+  --color-muted: #313244;
+  --color-border: #313244;
+}
+
+:root {
+  --foreground-rgb: 255, 255, 255;
+  --background-start-rgb: 10, 10, 15;
+  --background-end-rgb: 0, 0, 0;
+
+  --primary: #6366f1;
+  --primary-foreground: #ffffff;
+  --secondary: #1e1e2e;
+  --secondary-foreground: #a6adc8;
+  --accent: #f5c2e7;
+  --accent-foreground: #11111b;
+  --destructive: #f38ba8;
+  --destructive-foreground: #11111b;
+  --muted: #313244;
+  --muted-foreground: #9399b2;
+  --card: #181825;
+  --card-foreground: #cdd6f4;
+  --border: #313244;
+  --input: #313244;
+  --ring: #cba6f7;
+}
+
+body {
+  color: rgb(var(--foreground-rgb));
+  background: linear-gradient(
+      to bottom,
+      transparent,
+      rgb(var(--background-end-rgb))
+    )
+    rgb(var(--background-start-rgb));
+  min-height: 100vh;
+}
+
+.glass {
+  background: rgba(24, 24, 37, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.card-hover {
+  transition: all 0.3s;
+}
+.card-hover:hover {
+  transform: scale(1.02);
+  box-shadow: 0 20px 25px -5px rgba(99, 102, 241, 0.1);
+}

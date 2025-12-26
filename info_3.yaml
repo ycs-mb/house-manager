@@ -1,0 +1,114 @@
+# CrewAI Tasks Configuration for Prompt Processing
+
+validate_input_task:
+  description: >
+    Validate the input prompt to ensure it's suitable for processing.
+    Check that the prompt is not empty, has sufficient detail, and that 
+    the system is ready for file operations.
+
+    Input prompt: {input_prompt}
+
+    Return a validation status and any warnings or errors found.
+  expected_output: >
+    A validation report indicating whether the input is ready for processing,
+    along with any warnings or error messages if issues are found.
+  agent: validation_agent
+
+refine_prompt_task:
+  description: >
+    Take the input prompt and refine it for maximum clarity and effectiveness.
+    Enhance the prompt by:
+    - Adding missing context and background information
+    - Clarifying vague terms and requirements  
+    - Specifying desired outcomes and success criteria
+    - Identifying and addressing potential ambiguities
+    - Maintaining the original intent while improving precision
+
+    Original prompt: {input_prompt}
+
+    Create a refined version that is clear, specific, and actionable.
+  expected_output: >
+    A refined prompt that is significantly clearer and more specific than the original,
+    with enhanced context, clearer objectives, and reduced ambiguity. The refined prompt 
+    should maintain the original intent while being more actionable and precise.
+  agent: refinement_agent
+
+decompose_prompt_task:
+  description: >
+    Break down the refined prompt into a structured list of discrete tasks and subgoals.
+    Analyze the refined prompt and identify:
+    - Major components and phases of work
+    - Logical task sequences and dependencies
+    - Specific deliverables and milestones
+    - Sub-tasks that support larger objectives
+
+    Refined prompt: {refined_prompt}
+
+    Create a comprehensive task breakdown that covers all aspects of the refined prompt.
+  expected_output: >
+    A well-organized list of discrete tasks and subgoals, with clear descriptions 
+    and logical grouping. Each task should be specific enough to be actionable but 
+    comprehensive enough to cover all aspects of the refined prompt. Include task 
+    dependencies and priorities where relevant.
+  agent: decomposition_agent
+  context: [refine_prompt_task]
+
+create_action_plan_task:
+  description: >
+    Convert each identified task into specific, executable action steps.
+    For each task from the decomposition:
+    - Define concrete actions that can be taken
+    - Specify resources, tools, or skills needed
+    - Provide clear step-by-step instructions
+    - Include success criteria and checkpoints
+    - Consider potential obstacles and mitigation strategies
+
+    Task list: {task_list}
+
+    Generate actionable steps that can be executed or assigned to others.
+  expected_output: >
+    A comprehensive action plan with specific, executable steps for each task. 
+    Each action should include clear instructions, required resources, success 
+    criteria, and practical guidance for implementation. The plan should be 
+    detailed enough that someone could follow it without additional clarification.
+  agent: action_planning_agent
+  context: [decompose_prompt_task]
+
+save_refined_prompt_task:
+  description: >
+    Save the refined prompt to a text file with appropriate metadata.
+    Use the save_to_file tool to create 'refined_prompt.txt' with the 
+    refined prompt content and processing metadata.
+
+    Content to save: {refined_prompt}
+  expected_output: >
+    Confirmation that the refined prompt has been successfully saved to 
+    'refined_prompt.txt' with appropriate metadata headers.
+  agent: file_management_agent
+  context: [refine_prompt_task]
+
+save_task_list_task:
+  description: >
+    Save the decomposed task list to a text file with appropriate metadata.
+    Use the save_to_file tool to create 'task_list.txt' with the 
+    task breakdown and processing metadata.
+
+    Content to save: {task_list}
+  expected_output: >
+    Confirmation that the task list has been successfully saved to 
+    'task_list.txt' with appropriate metadata headers.
+  agent: file_management_agent
+  context: [decompose_prompt_task]
+
+save_action_plan_task:
+  description: >
+    Save the action plan to a text file with appropriate metadata.
+    Use the save_to_file tool to create 'action_points.txt' with the 
+    action steps and processing metadata.
+
+    Content to save: {action_plan}
+  expected_output: >
+    Confirmation that the action plan has been successfully saved to 
+    'action_points.txt' with appropriate metadata headers.
+  agent: file_management_agent
+  context: [create_action_plan_task]
