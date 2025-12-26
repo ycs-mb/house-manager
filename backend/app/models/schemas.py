@@ -98,3 +98,98 @@ class FinanceSummary(BaseModel):
     total_income: float
     net_balance: float
     category_breakdown: Dict[str, float]
+
+class RecipeBase(BaseModel):
+    name: str
+    description: Optional[str] = None
+    ingredients: Optional[List[Dict[str, Any]]] = []
+    instructions: Optional[str] = None
+    prep_time: Optional[int] = None
+    cook_time: Optional[int] = None
+    servings: int = 4
+    category: Optional[str] = None
+    tags: Optional[List[str]] = []
+    nutrition_info: Optional[Dict[str, Any]] = None
+
+class RecipeCreate(RecipeBase):
+    pass
+
+class RecipeUpdate(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
+    ingredients: Optional[List[Dict[str, Any]]] = None
+    instructions: Optional[str] = None
+    prep_time: Optional[int] = None
+    cook_time: Optional[int] = None
+    servings: Optional[int] = None
+    category: Optional[str] = None
+    tags: Optional[List[str]] = None
+    nutrition_info: Optional[Dict[str, Any]] = None
+
+class Recipe(RecipeBase):
+    id: str
+    household_id: str
+    created_at: datetime
+    created_by: Optional[str] = None
+    model_config = ConfigDict(from_attributes=True)
+
+class MealPlanBase(BaseModel):
+    recipe_id: str
+    meal_type: str
+    planned_date: datetime
+    notes: Optional[str] = None
+
+class MealPlanCreate(MealPlanBase):
+    pass
+
+class MealPlanUpdate(BaseModel):
+    recipe_id: Optional[str] = None
+    meal_type: Optional[str] = None
+    planned_date: Optional[datetime] = None
+    status: Optional[str] = None
+    notes: Optional[str] = None
+
+class MealPlan(MealPlanBase):
+    id: str
+    household_id: str
+    status: str
+    created_at: datetime
+    model_config = ConfigDict(from_attributes=True)
+
+class MealPlanWithRecipe(MealPlan):
+    recipe: Optional[Recipe] = None
+    model_config = ConfigDict(from_attributes=True)
+
+class ShoppingListItemBase(BaseModel):
+    name: str
+    quantity: int = 1
+    unit: Optional[str] = None
+    category: Optional[str] = None
+    priority: str = "normal"
+    notes: Optional[str] = None
+    added_from_recipe_id: Optional[str] = None
+
+class ShoppingListItemCreate(ShoppingListItemBase):
+    pass
+
+class ShoppingListItemUpdate(BaseModel):
+    name: Optional[str] = None
+    quantity: Optional[int] = None
+    unit: Optional[str] = None
+    category: Optional[str] = None
+    is_purchased: Optional[bool] = None
+    priority: Optional[str] = None
+    notes: Optional[str] = None
+
+class ShoppingListItem(ShoppingListItemBase):
+    id: str
+    household_id: str
+    is_purchased: bool
+    created_at: datetime
+    purchased_at: Optional[datetime] = None
+    model_config = ConfigDict(from_attributes=True)
+
+class WeeklyMealPlanRequest(BaseModel):
+    recipes: List[str]
+    start_date: datetime
+    preferences: Optional[Dict[str, Any]] = {}

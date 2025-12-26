@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.api.v1 import agents, chores, inventory, finance
+from app.api.v1 import agents, chores, inventory, finance, meals
 
 app = FastAPI(
     title="PICK-E House Manager API",
@@ -32,6 +32,7 @@ app.include_router(agents.router, prefix="/api/v1/agents", tags=["Agents"])
 app.include_router(chores.router, prefix="/api/v1/chores", tags=["Chores"])
 app.include_router(inventory.router, prefix="/api/v1/inventory", tags=["Inventory"])
 app.include_router(finance.router, prefix="/api/v1/finance", tags=["Finance"])
+app.include_router(meals.router, prefix="/api/v1/meals", tags=["Meals"])
 
 if __name__ == "__main__":
     import uvicorn

@@ -114,8 +114,23 @@ class GeoPoliticsAgent(Agent):
         super().__init__(
             role='Geopolitics Agent',
             goal='Monitor geopolitical developments',
-            backstory="""You track and analyze global political and economic 
+            backstory="""You track and analyze global political and economic
             trends.""",
             allow_delegation=True,
             verbose=True, llm=get_llm()
+        )
+
+class MealPlannerAgent(Agent):
+    def __init__(self):
+        super().__init__(
+            role='Meal Planner Agent',
+            goal='Create healthy and balanced meal plans based on available recipes and preferences',
+            backstory="""You are a nutrition and meal planning expert. You help
+            families plan their weekly meals, create balanced menus, generate
+            shopping lists from recipes, and optimize meal prep based on dietary
+            preferences, available ingredients, and time constraints. You ensure
+            variety, nutrition, and practicality in every meal plan.""",
+            allow_delegation=True,
+            verbose=True,
+            llm=get_llm()
         )

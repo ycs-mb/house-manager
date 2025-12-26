@@ -1,21 +1,23 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { 
-  Home, 
-  ShoppingCart, 
-  CheckSquare, 
-  Wallet, 
-  Lightbulb, 
-  Cpu, 
-  Globe, 
+import {
+  Home,
+  ShoppingCart,
+  CheckSquare,
+  Wallet,
+  Lightbulb,
+  Cpu,
+  Globe,
   Calendar as CalendarIcon,
   Activity,
   User,
   Settings,
   Bell,
-  RefreshCw
+  RefreshCw,
+  UtensilsCrossed
 } from 'lucide-react';
+import Link from 'next/link';
 import { choresApi, inventoryApi, financeApi, agentApi } from '@/lib/api';
 
 const DashboardCard = ({ title, value, icon: Icon, color, description }: any) => (
@@ -31,12 +33,30 @@ const DashboardCard = ({ title, value, icon: Icon, color, description }: any) =>
   </div>
 );
 
-const SidebarItem = ({ icon: Icon, label, active = false }: any) => (
-  <div className={`flex items-center gap-3 px-4 py-3 rounded-xl cursor-default transition-all ${active ? 'bg-primary/20 text-primary border border-primary/20' : 'text-muted-foreground hover:bg-white/5 hover:text-white'}`}>
-    <Icon size={20} />
-    <span className="font-medium text-sm">{label}</span>
-  </div>
-);
+const SidebarItem = ({ icon: Icon, label, active = false, href }: any) => {
+  const content = (
+    <>
+      <Icon size={20} />
+      <span className="font-medium text-sm">{label}</span>
+    </>
+  );
+
+  const className = `flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${active ? 'bg-primary/20 text-primary border border-primary/20' : 'text-muted-foreground hover:bg-white/5 hover:text-white'}`;
+
+  if (href) {
+    return (
+      <Link href={href} className={className}>
+        {content}
+      </Link>
+    );
+  }
+
+  return (
+    <div className={`${className} cursor-default`}>
+      {content}
+    </div>
+  );
+};
 
 export default function HomeDashboard() {
   const [stats, setStats] = useState({
@@ -122,10 +142,11 @@ const [isChatOpen, setIsChatOpen] = useState(false);
         </div>
 
         <nav className="flex flex-col gap-2">
-          <SidebarItem icon={Home} label="Dashboard" active />
+          <SidebarItem icon={Home} label="Dashboard" active href="/" />
           <SidebarItem icon={CheckSquare} label="Chores" />
           <SidebarItem icon={ShoppingCart} label="Inventory" />
           <SidebarItem icon={Wallet} label="Finance" />
+          <SidebarItem icon={UtensilsCrossed} label="Meal Planner" href="/meals" />
           <SidebarItem icon={CalendarIcon} label="Calendar" />
           <SidebarItem icon={Lightbulb} label="Ideas" />
           <SidebarItem icon={Globe} label="Geopolitics" />

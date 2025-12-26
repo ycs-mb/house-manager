@@ -79,3 +79,50 @@ class FinancialTransaction(Base):
     transaction_date = Column(DateTime, default=datetime.utcnow)
     recorded_by = Column(String(36), ForeignKey("users.id"))
     is_expense = Column(Boolean, default=True)
+
+class Recipe(Base):
+    __tablename__ = "recipes"
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    household_id = Column(String(36), ForeignKey("households.id"))
+    name = Column(String(255), nullable=False)
+    description = Column(Text)
+    ingredients = Column(JSON)
+    instructions = Column(Text)
+    prep_time = Column(Integer)
+    cook_time = Column(Integer)
+    servings = Column(Integer, default=4)
+    category = Column(String(100))
+    tags = Column(JSON, default=[])
+    nutrition_info = Column(JSON)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    created_by = Column(String(36), ForeignKey("users.id"))
+
+    meal_plans = relationship("MealPlan", back_populates="recipe")
+
+class MealPlan(Base):
+    __tablename__ = "meal_plans"
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    household_id = Column(String(36), ForeignKey("households.id"))
+    recipe_id = Column(String(36), ForeignKey("recipes.id"))
+    meal_type = Column(String(50))
+    planned_date = Column(DateTime, nullable=False)
+    status = Column(String(50), default="planned")
+    notes = Column(Text)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    recipe = relationship("Recipe", back_populates="meal_plans")
+
+class ShoppingListItem(Base):
+    __tablename__ = "shopping_list_items"
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    household_id = Column(String(36), ForeignKey("households.id"))
+    name = Column(String(255), nullable=False)
+    quantity = Column(Integer, default=1)
+    unit = Column(String(50))
+    category = Column(String(100))
+    is_purchased = Column(Boolean, default=False)
+    priority = Column(String(50), default="normal")
+    notes = Column(Text)
+    added_from_recipe_id = Column(String(36), ForeignKey("recipes.id"), nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    purchased_at = Column(DateTime)
