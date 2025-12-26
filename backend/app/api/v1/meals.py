@@ -192,34 +192,60 @@ def generate_weekly_meal_plan(
     request: schemas.WeeklyMealPlanRequest,
     db: Session = Depends(get_db)
 ):
-    meal_types = ["breakfast", "lunch", "dinner"]
+    meal_types = ["breakfast", "lunch", "snack", "dinner"]
     created_plans = []
+
+    # Get all available recipes and categorize by meal type
+    all_recipes = db.query(models.Recipe).filter(
+        models.Recipe.household_id == DEFAULT_HOUSEHOLD_ID
+    ).all()
+
+    # Group recipes by category for better variety
+    recipes_by_category = {
+        "breakfast": [r for r in all_recipes if r.category == "breakfast"],
+        "lunch": [r for r in all_recipes if r.category == "lunch"],
+        "snack": [r for r in all_recipes if r.category == "snack"],
+        "dinner": [r for r in all_recipes if r.category == "dinner"],
+    }
+
+    # Track used recipes to avoid repetition
+    used_recipes = {mt: set() for mt in meal_types}
 
     # Generate meal plans for 7 days
     for day in range(7):
         current_date = request.start_date + timedelta(days=day)
 
         for meal_type in meal_types:
-            # Cycle through recipes
-            recipe_index = (day * len(meal_types) + meal_types.index(meal_type)) % len(request.recipes)
-            recipe_id = request.recipes[recipe_index]
+            # Get available recipes for this meal type
+            available_recipes = recipes_by_category.get(meal_type, [])
 
-            # Verify recipe exists
-            recipe = db.query(models.Recipe).filter(
-                models.Recipe.id == recipe_id,
-                models.Recipe.household_id == DEFAULT_HOUSEHOLD_ID
-            ).first()
-            if not recipe:
+            # If no category-specific recipes, use any recipe
+            if not available_recipes:
+                available_recipes = all_recipes
+
+            # Filter out already used recipes for variety
+            unused_recipes = [r for r in available_recipes if r.id not in used_recipes[meal_type]]
+
+            # If all recipes used, reset the used set for this meal type
+            if not unused_recipes:
+                used_recipes[meal_type] = set()
+                unused_recipes = available_recipes
+
+            if not unused_recipes:
                 continue
 
-            # Create meal plan
+            # Select recipe (use index-based selection with variety)
+            recipe_index = day % len(unused_recipes)
+            recipe = unused_recipes[recipe_index]
+            used_recipes[meal_type].add(recipe.id)
+
+            # Create meal plan with appropriate hour
+            hour = 8 if meal_type == "breakfast" else 12 if meal_type == "lunch" else 15 if meal_type == "snack" else 18
             meal_plan = models.MealPlan(
                 household_id=DEFAULT_HOUSEHOLD_ID,
-                recipe_id=recipe_id,
+                recipe_id=recipe.id,
                 meal_type=meal_type,
-                planned_date=current_date.replace(
-                    hour=8 if meal_type == "breakfast" else 12 if meal_type == "lunch" else 18
-                )
+                planned_date=current_date.replace(hour=hour, minute=0, second=0)
             )
             db.add(meal_plan)
             created_plans.append(meal_plan)

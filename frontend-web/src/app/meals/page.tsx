@@ -41,6 +41,8 @@ export default function MealsPage() {
   const [showRecipeForm, setShowRecipeForm] = useState(false);
   const [editingPlan, setEditingPlan] = useState<string | null>(null);
   const [addingMeal, setAddingMeal] = useState<{ date: string; mealType: string } | null>(null);
+  const [manualRecipeName, setManualRecipeName] = useState('');
+  const [showManualEntry, setShowManualEntry] = useState(false);
   const [newRecipe, setNewRecipe] = useState({
     name: '',
     description: '',
@@ -202,7 +204,7 @@ export default function MealsPage() {
     try {
       // Create planned_date with appropriate hour based on meal type
       const dateObj = new Date(date);
-      const hour = mealType === 'breakfast' ? 8 : mealType === 'lunch' ? 12 : 18;
+      const hour = mealType === 'breakfast' ? 8 : mealType === 'lunch' ? 12 : mealType === 'snack' ? 15 : 18;
       dateObj.setHours(hour, 0, 0, 0);
 
       const response = await fetch('http://localhost:8000/api/v1/meals/meal-plans', {
@@ -217,21 +219,53 @@ export default function MealsPage() {
       if (response.ok) {
         await loadMealPlans();
         setAddingMeal(null);
+        setShowManualEntry(false);
+        setManualRecipeName('');
       }
     } catch (error) {
       console.error('Error creating meal plan:', error);
     }
   };
 
+  const createQuickRecipeAndMealPlan = async (date: string, mealType: string, recipeName: string) => {
+    try {
+      // First create the recipe
+      const recipeResponse = await fetch('http://localhost:8000/api/v1/meals/recipes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: recipeName,
+          description: `Quick ${mealType} recipe`,
+          ingredients: [],
+          instructions: '',
+          prep_time: 15,
+          cook_time: 30,
+          servings: 4,
+          category: mealType,
+          tags: [mealType]
+        })
+      });
+
+      if (recipeResponse.ok) {
+        const newRecipeData = await recipeResponse.json();
+        await loadRecipes(); // Reload recipes list
+        // Now create the meal plan with the new recipe
+        await createMealPlan(date, mealType, newRecipeData.id);
+      }
+    } catch (error) {
+      console.error('Error creating quick recipe and meal plan:', error);
+    }
+  };
+
   const groupMealPlansByDate = () => {
-    const grouped: { [key: string]: { breakfast?: MealPlan; lunch?: MealPlan; dinner?: MealPlan } } = {};
+    const grouped: { [key: string]: { breakfast?: MealPlan; lunch?: MealPlan; dinner?: MealPlan; snack?: MealPlan } } = {};
 
     mealPlans.forEach(plan => {
       const date = new Date(plan.planned_date).toISOString().split('T')[0];
       if (!grouped[date]) {
         grouped[date] = {};
       }
-      grouped[date][plan.meal_type as 'breakfast' | 'lunch' | 'dinner'] = plan;
+      grouped[date][plan.meal_type as 'breakfast' | 'lunch' | 'dinner' | 'snack'] = plan;
     });
 
     return grouped;
@@ -467,13 +501,16 @@ export default function MealsPage() {
                       </div>
 
                       <div style={{ padding: '1.5rem', display: 'grid', gap: '1rem' }}>
-                        {['breakfast', 'lunch', 'dinner'].map(mealType => {
-                          const plan = meals[mealType as 'breakfast' | 'lunch' | 'dinner'];
+                        {['breakfast', 'lunch', 'snack', 'dinner'].map(mealType => {
+                          const plan = meals[mealType as 'breakfast' | 'lunch' | 'snack' | 'dinner'];
+                          const mealEmoji = mealType === 'breakfast' ? '🌅' : mealType === 'lunch' ? '🌞' : mealType === 'snack' ? '🍎' : '🌙';
+                          // Filter recipes by meal type category
+                          const filteredRecipes = recipes.filter(r => r.category === mealType || !r.category);
 
                           return (
                             <div key={mealType} style={{ display: 'flex', alignItems: 'center', gap: '1rem', paddingBottom: '1rem', borderBottom: mealType !== 'dinner' ? '1px solid #2a2a3a' : 'none' }}>
                               <div style={{ minWidth: '100px', fontWeight: 'bold', color: '#888', textTransform: 'capitalize' }}>
-                                {mealType === 'breakfast' && '🌅'} {mealType === 'lunch' && '🌞'} {mealType === 'dinner' && '🌙'} {mealType}
+                                {mealEmoji} {mealType}
                               </div>
 
                               {plan ? (
@@ -484,7 +521,7 @@ export default function MealsPage() {
                                       onChange={(e) => updateMealPlan(plan.id, e.target.value)}
                                       style={{ flex: 1, padding: '0.75rem', backgroundColor: '#2a2a3a', border: '1px solid #6366f1', borderRadius: '8px', color: 'white' }}
                                     >
-                                      {recipes.map(recipe => (
+                                      {filteredRecipes.map(recipe => (
                                         <option key={recipe.id} value={recipe.id}>{recipe.name}</option>
                                       ))}
                                     </select>
@@ -515,25 +552,71 @@ export default function MealsPage() {
                                 <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '1rem' }}>
                                   {addingMeal?.date === date && addingMeal?.mealType === mealType ? (
                                     <>
-                                      <select
-                                        onChange={(e) => {
-                                          if (e.target.value) {
-                                            createMealPlan(date, mealType, e.target.value);
-                                          }
-                                        }}
-                                        style={{ flex: 1, padding: '0.75rem', backgroundColor: '#2a2a3a', border: '1px solid #6366f1', borderRadius: '8px', color: 'white' }}
-                                      >
-                                        <option value="">Select a recipe...</option>
-                                        {recipes.map(recipe => (
-                                          <option key={recipe.id} value={recipe.id}>{recipe.name}</option>
-                                        ))}
-                                      </select>
-                                      <button
-                                        onClick={() => setAddingMeal(null)}
-                                        style={{ padding: '0.5rem 1rem', backgroundColor: '#444', border: 'none', borderRadius: '6px', color: 'white', cursor: 'pointer', fontSize: '0.875rem' }}
-                                      >
-                                        Cancel
-                                      </button>
+                                      {showManualEntry ? (
+                                        <>
+                                          <input
+                                            type="text"
+                                            placeholder="Enter recipe name..."
+                                            value={manualRecipeName}
+                                            onChange={(e) => setManualRecipeName(e.target.value)}
+                                            onKeyDown={(e) => {
+                                              if (e.key === 'Enter' && manualRecipeName.trim()) {
+                                                createQuickRecipeAndMealPlan(date, mealType, manualRecipeName.trim());
+                                              }
+                                            }}
+                                            style={{ flex: 1, padding: '0.75rem', backgroundColor: '#2a2a3a', border: '1px solid #6366f1', borderRadius: '8px', color: 'white' }}
+                                            autoFocus
+                                          />
+                                          <button
+                                            onClick={() => {
+                                              if (manualRecipeName.trim()) {
+                                                createQuickRecipeAndMealPlan(date, mealType, manualRecipeName.trim());
+                                              }
+                                            }}
+                                            style={{ padding: '0.5rem 1rem', backgroundColor: '#10b981', border: 'none', borderRadius: '6px', color: 'white', cursor: 'pointer', fontSize: '0.875rem' }}
+                                          >
+                                            Save
+                                          </button>
+                                          <button
+                                            onClick={() => {
+                                              setShowManualEntry(false);
+                                              setManualRecipeName('');
+                                            }}
+                                            style={{ padding: '0.5rem 1rem', backgroundColor: '#444', border: 'none', borderRadius: '6px', color: 'white', cursor: 'pointer', fontSize: '0.875rem' }}
+                                          >
+                                            Back
+                                          </button>
+                                        </>
+                                      ) : (
+                                        <>
+                                          <select
+                                            onChange={(e) => {
+                                              if (e.target.value === 'manual') {
+                                                setShowManualEntry(true);
+                                              } else if (e.target.value) {
+                                                createMealPlan(date, mealType, e.target.value);
+                                              }
+                                            }}
+                                            style={{ flex: 1, padding: '0.75rem', backgroundColor: '#2a2a3a', border: '1px solid #6366f1', borderRadius: '8px', color: 'white' }}
+                                          >
+                                            <option value="">Select a recipe...</option>
+                                            {filteredRecipes.map(recipe => (
+                                              <option key={recipe.id} value={recipe.id}>{recipe.name}</option>
+                                            ))}
+                                            <option value="manual" style={{ fontStyle: 'italic', color: '#10b981' }}>+ Add new recipe manually</option>
+                                          </select>
+                                          <button
+                                            onClick={() => {
+                                              setAddingMeal(null);
+                                              setShowManualEntry(false);
+                                              setManualRecipeName('');
+                                            }}
+                                            style={{ padding: '0.5rem 1rem', backgroundColor: '#444', border: 'none', borderRadius: '6px', color: 'white', cursor: 'pointer', fontSize: '0.875rem' }}
+                                          >
+                                            Cancel
+                                          </button>
+                                        </>
+                                      )}
                                     </>
                                   ) : (
                                     <>
